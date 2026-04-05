@@ -688,7 +688,8 @@ const state = {
   wsMarkets: null,
 };
 
-const BASE = 'https://relay.bayse.markets';
+const BASE = '';
+const PROXY = (path) => `/api/proxy?path=${encodeURIComponent(path)}`;
 const WSS_SPOT = 'wss://socket.bayse.markets/ws/v1/realtime';
 const WSS_MARKETS = 'wss://socket.bayse.markets/ws/v1/markets';
 const SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT'];
@@ -732,7 +733,7 @@ async function fetchCryptoMarkets() {
   let more = true;
 
   while (more && page <= 5) {
-    const res = await fetch(`${BASE}/v1/pm/events?page=${page}&size=50`, {
+    const res = await fetch(PROXY(`/v1/pm/events?page=${page}&size=50`), {
       headers: { 'X-Public-Key': state.publicKey }
     });
     if (!res.ok) throw new Error('API error');
@@ -1080,7 +1081,7 @@ function renderActivity() {
 // ── PORTFOLIO ──
 async function fetchPortfolio() {
   try {
-    const res = await fetch(`${BASE}/v1/pm/portfolio`, {
+    const res = await fetch(PROXY("/v1/pm/portfolio"), {
       headers: { 'X-Public-Key': state.publicKey }
     });
     if (!res.ok) return;
