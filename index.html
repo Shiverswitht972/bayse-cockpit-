@@ -1086,7 +1086,6 @@ async function fetchPortfolio() {
     });
     if (!res.ok) return;
     const data = await res.json();
-    console.log('PORTFOLIO RAW:', JSON.stringify(data));
     renderPortfolio(data);
     setDot('dot-portfolio', 'live');
   } catch {
@@ -1096,22 +1095,21 @@ async function fetchPortfolio() {
 
 function renderPortfolio(data) {
   const el = document.getElementById('portfolioContent');
-  const positions = data.positions || data.data || data || [];
-  const arr = Array.isArray(positions) ? positions : [];
+  const positions = data.outcomeBalances || [];
+  const total = data.portfolioCurrentValue || 0;
+  const cost = data.portfolioCost || 0;
+  const pnl = total - cost;
+  const pct = data.portfolioPercentageChange || 0;
 
-  if (!arr.length) {
+  if (!positions.length) {
     el.innerHTML = `
       <div class="portfolio-stat">
         <div class="portfolio-stat-label">Total Value</div>
-        <div class="portfolio-stat-value">$${(data.totalValue || data.total || 0).toFixed(2)}</div>
+        <div class="portfolio-stat-value">$${total.toFixed(2)}</div>
       </div>
       <div class="empty-state" style="padding:16px 0">No open positions</div>`;
     return;
   }
-
-  const total = arr.reduce((s, p) => s + (p.currentValue || p.value || 0), 0);
-  const cost = arr.reduce((s, p) => s + (p.cost || p.amount || 0), 0);
-  const pnl = total - cost;
 
   el.innerHTML = `
     <div class="portfolio-stat">
@@ -1120,17 +1118,17 @@ function renderPortfolio(data) {
     </div>
     <div class="portfolio-stat">
       <div class="portfolio-stat-label">Unrealised P&L</div>
-      <div class="portfolio-stat-value ${pnl >= 0 ? 'green' : 'red'}">${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}</div>
+      <div class="portfolio-stat-value ${pnl >= 0 ? 'green' : 'red'}">${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)} <span style="font-size:13px;opacity:0.7">(${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%)</span></div>
     </div>
     <div style="margin-top:12px">
-      ${arr.slice(0, 5).map(p => `
+      ${positions.slice(0, 5).map(p => `
         <div class="position-row">
           <div>
-            <div style="font-size:11px;font-weight:600;margin-bottom:2px">${escHtml(p.eventTitle || p.title || 'Market')}</div>
-            <span class="position-outcome ${(p.outcome || '').toLowerCase()}">${p.outcome || ''}</span>
+            <div style="font-size:11px;font-weight:600;margin-bottom:2px">${escHtml(p.eventTitle || p.marketTitle || p.title || 'Market')}</div>
+            <span class="position-outcome ${(p.outcome || p.side || '').toLowerCase()}">${p.outcome || p.side || ''}</span>
           </div>
-          <div class="position-pnl ${(p.pnl || 0) >= 0 ? 'pos' : 'neg'}">
-            ${(p.pnl || 0) >= 0 ? '+' : ''}$${(p.pnl || 0).toFixed(2)}
+          <div class="position-pnl ${(p.pnl || p.unrealisedPnl || 0) >= 0 ? 'pos' : 'neg'}">
+            ${(p.pnl || p.unrealisedPnl || 0) >= 0 ? '+' : ''}$${(p.pnl || p.unrealisedPnl || 0).toFixed(2)}
           </div>
         </div>`).join('')}
     </div>`;
