@@ -693,7 +693,7 @@ const PROXY = (path) => `/api/proxy?path=${encodeURIComponent(path)}`;
 const WSS_SPOT = 'wss://socket.bayse.markets/ws/v1/realtime';
 const WSS_MARKETS = 'wss://socket.bayse.markets/ws/v1/markets';
 const SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT'];
-const CRYPTO_KEYWORDS = ['btc', 'eth', 'sol', 'bitcoin', 'ethereum', 'solana', 'crypto', 'usdt', 'usd/'];
+const CRYPTO_KEYWORDS = ['btc', 'eth', 'sol', 'bitcoin', 'ethereum', 'solana', 'crypto', 'usd', 'price', '$'];
 const MAX_HISTORY = 40;
 const MAX_ALERTS = 8;
 const MAX_ACTIVITY = 12;
@@ -1087,6 +1087,7 @@ async function fetchPortfolio() {
     if (!res.ok) return;
     const data = await res.json();
     renderPortfolio(data);
+    document.getElementById('port-currency').textContent = data.currency || 'NGN';
     setDot('dot-portfolio', 'live');
   } catch {
     setDot('dot-portfolio', 'error');
@@ -1100,12 +1101,14 @@ function renderPortfolio(data) {
   const cost = data.portfolioCost || 0;
   const pnl = total - cost;
   const pct = data.portfolioPercentageChange || 0;
+  const currency = data.currency || 'NGN';
+  const sym = currency === 'NGN' ? '\u20A6' : '$';
 
   if (!positions.length) {
     el.innerHTML = `
       <div class="portfolio-stat">
         <div class="portfolio-stat-label">Total Value</div>
-        <div class="portfolio-stat-value">$${total.toFixed(2)}</div>
+        <div class="portfolio-stat-value">${sym}${total.toFixed(2)}</div>
       </div>
       <div class="empty-state" style="padding:16px 0">No open positions</div>`;
     return;
@@ -1114,11 +1117,11 @@ function renderPortfolio(data) {
   el.innerHTML = `
     <div class="portfolio-stat">
       <div class="portfolio-stat-label">Open Value</div>
-      <div class="portfolio-stat-value">$${total.toFixed(2)}</div>
+      <div class="portfolio-stat-value">${sym}${total.toFixed(2)}</div>
     </div>
     <div class="portfolio-stat">
       <div class="portfolio-stat-label">Unrealised P&L</div>
-      <div class="portfolio-stat-value ${pnl >= 0 ? 'green' : 'red'}">${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)} <span style="font-size:13px;opacity:0.7">(${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%)</span></div>
+      <div class="portfolio-stat-value ${pnl >= 0 ? 'green' : 'red'}">${pnl >= 0 ? '+' : ''}${sym}${pnl.toFixed(2)} <span style="font-size:13px;opacity:0.7">(${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%)</span></div>
     </div>
     <div style="margin-top:12px">
       ${positions.slice(0, 5).map(p => `
@@ -1128,11 +1131,12 @@ function renderPortfolio(data) {
             <span class="position-outcome ${(p.outcome || p.side || '').toLowerCase()}">${p.outcome || p.side || ''}</span>
           </div>
           <div class="position-pnl ${(p.pnl || p.unrealisedPnl || 0) >= 0 ? 'pos' : 'neg'}">
-            ${(p.pnl || p.unrealisedPnl || 0) >= 0 ? '+' : ''}$${(p.pnl || p.unrealisedPnl || 0).toFixed(2)}
+            ${(p.pnl || p.unrealisedPnl || 0) >= 0 ? '+' : ''}${sym}${(p.pnl || p.unrealisedPnl || 0).toFixed(2)}
           </div>
         </div>`).join('')}
     </div>`;
 }
+
 
 // ── UTILS ──
 function setDot(id, state) {
