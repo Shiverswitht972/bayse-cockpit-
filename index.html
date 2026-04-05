@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bayse Cockpit</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap');
+
+  :root {
+    --bg: #080810;
+    --surface: #0e0e1a;
+    --surface2: #13131f;
+    --border: #1c1c2e;
+    --border2: #252538;
+    --accent: #f5a623;
+    --accent-dim: rgba(245,166,35,0.12);
+    --purple: #7c3aed;
+    --purple-dim: rgba(124,58,237,0.12);
+    --green: #22c55e;
+    --green-dim: rgba(34,197,94,0.12);
+    --red: #ef4444;
+    --red-dim: rgba(239,68,68,0.12);
+    --blue: #38bdf8;
+    --text: #e2e2f0;
+    --muted: #4a4a6a;
+    --muted2: #6b6b8a;
+    --mono: 'Space Mono', monospace;
+    --sans: 'Syne', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── SETUP SCREEN ── */
+  #setupScreen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background-image:
+      radial-gradient(ellipse at 15% 50%, rgba(124,58,237,0.07) 0%, transparent 55%),
+      radial-gradient(ellipse at 85% 20%, rgba(245,166,35,0.05) 0%, transparent 50%);
+  }
+
+  .setup-card {
+    width: 100%;
+    max-width: 460px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 36px;
+  }
+
+  .setup-logo {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+
+  .setup-card h1 {
+    font-size: 26px;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 6px;
+  }
+
+  .setup-card h1 span { color: var(--accent); }
+
+  .setup-card p {
+    font-size: 13px;
+    color: var(--muted2);
+    line-height: 1.6;
+    margin-bottom: 28px;
+    font-weight: 400;
+  }
+
+  .setup-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted2);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .setup-input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 13px 14px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.2s;
+    margin-bottom: 20px;
+  }
+
+  .setup-input:focus { border-color: var(--accent); }
+  .setup-input::placeholder { color: var(--muted); }
+
+  .setup-btn {
+    width: 100%;
+    padding: 14px;
+    background: var(--accent);
+    color: #080810;
+    border: none;
+    border-radius: 8px;
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.03em;
+    transition: all 0.2s;
+  }
+
+  .setup-btn:hover { background: #f0b840; transform: translateY(-1px); }
+  .setup-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .setup-status {
+    margin-top: 14px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted2);
+    min-height: 18px;
+  }
+
+  .setup-status.err { color: var(--red); }
+  .setup-status.ok { color: var(--green); }
+
+  /* ── COCKPIT ── */
+  #cockpit { display: none; flex-direction: column; min-height: 100vh; }
+
+  /* TOP BAR */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .topbar-logo {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.18em;
+    font-weight: 700;
+  }
+
+  .conn-badges {
+    display: flex;
+    gap: 8px;
+  }
+
+  .badge {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted2);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 10px;
+  }
+
+  .badge-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: background 0.3s;
+  }
+
+  .badge-dot.live { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .badge-dot.error { background: var(--red); }
+
+  .topbar-time {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted2);
+  }
+
+  /* MAIN GRID */
+  .main {
+    flex: 1;
+    padding: 20px 24px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 16px;
+  }
+
+  /* PANEL BASE */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--border2);
+  }
+
+  .panel.accent-green::before { background: var(--green); }
+  .panel.accent-orange::before { background: var(--accent); }
+  .panel.accent-purple::before { background: var(--purple); }
+  .panel.accent-red::before { background: var(--red); }
+  .panel.accent-blue::before { background: var(--blue); }
+
+  .panel-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted2);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .panel-label span { color: var(--muted); font-size: 9px; }
+
+  /* SPOT PRICE PANELS */
+  .spot-grid {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+  }
+
+  .spot-symbol {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--muted2);
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+
+  .spot-price {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    font-family: var(--mono);
+    transition: color 0.3s;
+  }
+
+  .spot-change {
+    margin-top: 8px;
+    font-family: var(--mono);
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .spot-change.up { color: var(--green); }
+  .spot-change.down { color: var(--red); }
+  .spot-change.flat { color: var(--muted2); }
+
+  .sparkline {
+    margin-top: 12px;
+    height: 36px;
+    width: 100%;
+  }
+
+  /* BAYSE MARKETS PANEL */
+  .markets-panel {
+    grid-column: 1 / 3;
+  }
+
+  .market-row {
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    gap: 12px;
+    transition: background 0.2s;
+  }
+
+  .market-row:last-child { border-bottom: none; }
+
+  .market-title {
+    flex: 1;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.3;
+  }
+
+  .market-sub {
+    font-size: 10px;
+    color: var(--muted2);
+    font-weight: 400;
+    font-family: var(--mono);
+    margin-top: 2px;
+  }
+
+  .prob-bar-wrap {
+    width: 80px;
+  }
+
+  .prob-label {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--muted2);
+    margin-bottom: 4px;
+  }
+
+  .prob-bar {
+    height: 4px;
+    background: var(--border2);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .prob-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: var(--green);
+    transition: width 0.5s ease;
+  }
+
+  .prob-yes {
+    font-family: var(--mono);
+    font-size: 16px;
+    font-weight: 700;
+    min-width: 52px;
+    text-align: right;
+    transition: color 0.3s;
+  }
+
+  .prob-yes.high { color: var(--green); }
+  .prob-yes.mid { color: var(--accent); }
+  .prob-yes.low { color: var(--red); }
+
+  /* DIVERGENCE PANEL */
+  .div-panel {
+    grid-column: 3 / 4;
+  }
+
+  .alert-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .alert-item {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .alert-item.strong {
+    border-color: rgba(245,166,35,0.4);
+    background: var(--accent-dim);
+  }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+
+  .alert-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+
+  .alert-symbol {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .alert-time {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--muted);
+  }
+
+  .alert-body {
+    font-size: 11px;
+    color: var(--muted2);
+    line-height: 1.5;
+    font-weight: 400;
+  }
+
+  .alert-body strong { color: var(--text); }
+
+  .no-alerts {
+    text-align: center;
+    padding: 30px 0;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.8;
+  }
+
+  /* ACTIVITY + PORTFOLIO */
+  .activity-panel { grid-column: 1 / 3; }
+  .portfolio-panel { grid-column: 3 / 4; }
+
+  .activity-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .activity-row:last-child { border-bottom: none; }
+
+  .activity-type {
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 700;
+    padding: 3px 7px;
+    border-radius: 4px;
+    letter-spacing: 0.06em;
+    flex-shrink: 0;
+  }
+
+  .activity-type.buy { background: var(--green-dim); color: var(--green); }
+  .activity-type.sell { background: var(--red-dim); color: var(--red); }
+
+  .activity-info { flex: 1; min-width: 0; }
+
+  .activity-title {
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .activity-meta {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--muted2);
+    margin-top: 2px;
+  }
+
+  .activity-amount {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
+    flex-shrink: 0;
+  }
+
+  /* PORTFOLIO */
+  .portfolio-stat {
+    margin-bottom: 16px;
+  }
+
+  .portfolio-stat-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--muted2);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .portfolio-stat-value {
+    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .portfolio-stat-value.green { color: var(--green); }
+  .portfolio-stat-value.red { color: var(--red); }
+
+  .position-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+  }
+
+  .position-row:last-child { border-bottom: none; }
+
+  .position-outcome {
+    font-family: var(--mono);
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  .position-outcome.yes { background: var(--green-dim); color: var(--green); }
+  .position-outcome.no { background: var(--red-dim); color: var(--red); }
+
+  .position-pnl {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .position-pnl.pos { color: var(--green); }
+  .position-pnl.neg { color: var(--red); }
+
+  .empty-state {
+    text-align: center;
+    padding: 24px 0;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.8;
+  }
+
+  /* FLASH */
+  .flash-up { animation: flashUp 0.6s ease; }
+  .flash-down { animation: flashDown 0.6s ease; }
+
+  @keyframes flashUp {
+    0% { color: var(--green); }
+    100% { color: inherit; }
+  }
+
+  @keyframes flashDown {
+    0% { color: var(--red); }
+    100% { color: inherit; }
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    .main { grid-template-columns: 1fr 1fr; }
+    .spot-grid { grid-template-columns: 1fr 1fr 1fr; }
+    .markets-panel { grid-column: 1 / -1; }
+    .div-panel { grid-column: 1 / -1; }
+    .activity-panel { grid-column: 1 / -1; }
+    .portfolio-panel { grid-column: 1 / -1; }
+  }
+
+  @media (max-width: 600px) {
+    .main { grid-template-columns: 1fr; padding: 12px; }
+    .spot-grid { grid-template-columns: 1fr; }
+    .topbar { padding: 12px 16px; }
+    .conn-badges { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- SETUP SCREEN -->
+<div id="setupScreen">
+  <div class="setup-card">
+    <div class="setup-logo">⬡ Bayse Cockpit</div>
+    <h1>Your Personal<br><span>Trading Cockpit</span></h1>
+    <p>Paste your public API key to launch. Live spot prices, Bayse market probabilities, and divergence alerts — all in one screen.</p>
+    <label class="setup-label">Public Key (pk_live_...)</label>
+    <input class="setup-input" id="pubKeyInput" type="text" placeholder="pk_live_xxxxxxxxxxxxxxxx" spellcheck="false" autocomplete="off" />
+    <button class="setup-btn" id="launchBtn" onclick="launch()">Launch Cockpit →</button>
+    <div class="setup-status" id="setupStatus"></div>
+  </div>
+</div>
+
+<!-- COCKPIT -->
+<div id="cockpit">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-logo">⬡ BAYSE COCKPIT</div>
+      <div class="conn-badges">
+        <div class="badge"><div class="badge-dot" id="dot-spot"></div>SPOT</div>
+        <div class="badge"><div class="badge-dot" id="dot-markets"></div>MARKETS</div>
+        <div class="badge"><div class="badge-dot" id="dot-portfolio"></div>PORTFOLIO</div>
+      </div>
+    </div>
+    <div class="topbar-time" id="clock">--:--:--</div>
+  </div>
+
+  <div class="main">
+
+    <!-- SPOT PRICES -->
+    <div class="spot-grid">
+      <div class="panel accent-green" id="spot-BTCUSDT">
+        <div class="panel-label">BTC / USDT <span>BINANCE LIVE</span></div>
+        <div class="spot-symbol">Bitcoin</div>
+        <div class="spot-price" id="price-BTCUSDT">—</div>
+        <div class="spot-change flat" id="change-BTCUSDT">— %</div>
+        <svg class="sparkline" id="spark-BTCUSDT" viewBox="0 0 200 40" preserveAspectRatio="none"></svg>
+      </div>
+      <div class="panel accent-blue" id="spot-ETHUSDT">
+        <div class="panel-label">ETH / USDT <span>BINANCE LIVE</span></div>
+        <div class="spot-symbol">Ethereum</div>
+        <div class="spot-price" id="price-ETHUSDT">—</div>
+        <div class="spot-change flat" id="change-ETHUSDT">— %</div>
+        <svg class="sparkline" id="spark-ETHUSDT" viewBox="0 0 200 40" preserveAspectRatio="none"></svg>
+      </div>
+      <div class="panel accent-purple" id="spot-SOLUSDT">
+        <div class="panel-label">SOL / USDT <span>BINANCE LIVE</span></div>
+        <div class="spot-symbol">Solana</div>
+        <div class="spot-price" id="price-SOLUSDT">—</div>
+        <div class="spot-change flat" id="change-SOLUSDT">— %</div>
+        <svg class="sparkline" id="spark-SOLUSDT" viewBox="0 0 200 40" preserveAspectRatio="none"></svg>
+      </div>
+    </div>
+
+    <!-- BAYSE MARKETS -->
+    <div class="panel markets-panel accent-orange">
+      <div class="panel-label">Bayse Crypto Markets <span id="market-count">loading...</span></div>
+      <div id="marketList"><div class="empty-state">Fetching crypto markets...</div></div>
+    </div>
+
+    <!-- DIVERGENCE ALERTS -->
+    <div class="panel div-panel accent-orange">
+      <div class="panel-label">Divergence Alerts <span id="alert-count">0</span></div>
+      <div class="alert-list" id="alertList">
+        <div class="no-alerts">Watching for<br>entry signals...<br><br>⬡</div>
+      </div>
+    </div>
+
+    <!-- ACTIVITY FEED -->
+    <div class="panel activity-panel accent-purple">
+      <div class="panel-label">Live Activity <span>ALL MARKETS</span></div>
+      <div id="activityList"><div class="empty-state">Waiting for trades...</div></div>
+    </div>
+
+    <!-- PORTFOLIO -->
+    <div class="panel portfolio-panel accent-green">
+      <div class="panel-label">Portfolio <span id="port-currency">USD</span></div>
+      <div id="portfolioContent"><div class="empty-state">Loading portfolio...</div></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── STATE ──
+const state = {
+  publicKey: '',
+  prices: { BTCUSDT: null, ETHUSDT: null, SOLUSDT: null },
+  priceHistory: { BTCUSDT: [], ETHUSDT: [], SOLUSDT: [] },
+  openedPrices: { BTCUSDT: null, ETHUSDT: null, SOLUSDT: null },
+  bayseMarkets: [],
+  bayseEventIds: [],
+  alerts: [],
+  activities: [],
+  wsSpot: null,
+  wsMarkets: null,
+};
+
+const BASE = 'https://relay.bayse.markets';
+const WSS_SPOT = 'wss://socket.bayse.markets/ws/v1/realtime';
+const WSS_MARKETS = 'wss://socket.bayse.markets/ws/v1/markets';
+const SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT'];
+const CRYPTO_KEYWORDS = ['btc', 'eth', 'sol', 'bitcoin', 'ethereum', 'solana', 'crypto', 'usd', 'price', '$'];
+const MAX_HISTORY = 40;
+const MAX_ALERTS = 8;
+const MAX_ACTIVITY = 12;
+const DIV_THRESHOLD = 0.025; // 2.5% spot move triggers check
+
+// ── SETUP ──
+async function launch() {
+  const key = document.getElementById('pubKeyInput').value.trim();
+  if (!key.startsWith('pk_live_')) {
+    setSetupStatus('Public key must start with pk_live_', 'err');
+    return;
+  }
+  state.publicKey = key;
+  document.getElementById('launchBtn').disabled = true;
+  setSetupStatus('Fetching markets...', '');
+
+  try {
+    await fetchCryptoMarkets();
+    setSetupStatus('Connecting feeds...', '');
+    startCockpit();
+  } catch (e) {
+    setSetupStatus('Could not reach Bayse API. Check your key and try again.', 'err');
+    document.getElementById('launchBtn').disabled = false;
+  }
+}
+
+function setSetupStatus(msg, cls) {
+  const el = document.getElementById('setupStatus');
+  el.textContent = msg;
+  el.className = 'setup-status ' + cls;
+}
+
+// ── FETCH CRYPTO MARKETS ──
+async function fetchCryptoMarkets() {
+  let page = 1;
+  let found = [];
+  let more = true;
+
+  while (more && page <= 5) {
+    const res = await fetch(`${BASE}/v1/pm/events?page=${page}&size=50`, {
+      headers: { 'X-Public-Key': state.publicKey }
+    });
+    if (!res.ok) throw new Error('API error');
+    const data = await res.json();
+    const events = data.data || data.events || data || [];
+    const arr = Array.isArray(events) ? events : [];
+
+    for (const ev of arr) {
+      const title = (ev.title || ev.name || ev.slug || '').toLowerCase();
+      const isCrypto = CRYPTO_KEYWORDS.some(k => title.includes(k));
+      if (isCrypto && ev.status !== 'resolved' && ev.status !== 'closed') {
+        found.push(ev);
+      }
+    }
+
+    const pagination = data.pagination || {};
+    if (pagination.page >= pagination.lastPage || arr.length === 0) more = false;
+    else page++;
+  }
+
+  state.bayseMarkets = found;
+  state.bayseEventIds = found.map(e => e.id).filter(Boolean);
+}
+
+// ── START COCKPIT ──
+function startCockpit() {
+  document.getElementById('setupScreen').style.display = 'none';
+  document.getElementById('cockpit').style.display = 'flex';
+
+  renderMarkets();
+  connectSpotWS();
+  connectMarketsWS();
+  fetchPortfolio();
+  startClock();
+
+  setInterval(fetchPortfolio, 30000);
+}
+
+// ── CLOCK ──
+function startClock() {
+  function tick() {
+    const now = new Date();
+    document.getElementById('clock').textContent =
+      now.toLocaleTimeString('en-GB', { hour12: false }) + ' WAT';
+  }
+  tick();
+  setInterval(tick, 1000);
+}
+
+// ── SPOT WEBSOCKET ──
+function connectSpotWS() {
+  if (state.wsSpot) state.wsSpot.close();
+  const ws = new WebSocket(WSS_SPOT);
+  state.wsSpot = ws;
+
+  ws.addEventListener('open', () => {
+    setDot('dot-spot', 'live');
+    ws.send(JSON.stringify({
+      type: 'subscribe',
+      channel: 'asset_prices',
+      symbols: SYMBOLS
+    }));
+  });
+
+  ws.addEventListener('message', e => {
+    for (const line of e.data.split('\n')) {
+      if (!line.trim()) continue;
+      try {
+        const msg = JSON.parse(line);
+        if (msg.type === 'asset_price') handleSpotTick(msg.data);
+      } catch {}
+    }
+  });
+
+  ws.addEventListener('close', () => {
+    setDot('dot-spot', 'error');
+    setTimeout(connectSpotWS, 3000);
+  });
+
+  ws.addEventListener('error', () => setDot('dot-spot', 'error'));
+}
+
+function handleSpotTick({ symbol, price }) {
+  const prev = state.prices[symbol];
+  state.prices[symbol] = price;
+
+  // Record open price once
+  if (!state.openedPrices[symbol]) state.openedPrices[symbol] = price;
+
+  // History for sparkline
+  const hist = state.priceHistory[symbol];
+  hist.push(price);
+  if (hist.length > MAX_HISTORY) hist.shift();
+
+  // Render
+  const priceEl = document.getElementById(`price-${symbol}`);
+  const changeEl = document.getElementById(`change-${symbol}`);
+  if (!priceEl) return;
+
+  const open = state.openedPrices[symbol];
+  const pct = open ? ((price - open) / open) * 100 : 0;
+  const dir = prev ? (price > prev ? 'up' : price < prev ? 'down' : 'flat') : 'flat';
+
+  priceEl.textContent = formatPrice(symbol, price);
+  priceEl.classList.remove('flash-up', 'flash-down');
+  void priceEl.offsetWidth;
+  if (dir === 'up') priceEl.classList.add('flash-up');
+  else if (dir === 'down') priceEl.classList.add('flash-down');
+
+  changeEl.className = `spot-change ${pct >= 0 ? 'up' : 'down'}`;
+  changeEl.textContent = `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%`;
+
+  renderSparkline(symbol);
+  checkDivergence(symbol, price, prev, pct);
+}
+
+function formatPrice(symbol, price) {
+  if (symbol === 'BTCUSDT') return '$' + price.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  if (symbol === 'ETHUSDT') return '$' + price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return '$' + price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function renderSparkline(symbol) {
+  const hist = state.priceHistory[symbol];
+  if (hist.length < 2) return;
+  const svg = document.getElementById(`spark-${symbol}`);
+  if (!svg) return;
+
+  const min = Math.min(...hist);
+  const max = Math.max(...hist);
+  const range = max - min || 1;
+  const W = 200, H = 40;
+  const pts = hist.map((p, i) => {
+    const x = (i / (hist.length - 1)) * W;
+    const y = H - ((p - min) / range) * (H - 4) - 2;
+    return `${x},${y}`;
+  });
+
+  const isUp = hist[hist.length - 1] >= hist[0];
+  const color = isUp ? '#22c55e' : '#ef4444';
+  svg.innerHTML = `<polyline points="${pts.join(' ')}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" opacity="0.8"/>`;
+}
+
+// ── MARKETS WEBSOCKET ──
+function connectMarketsWS() {
+  if (state.wsMarkets) state.wsMarkets.close();
+  const ws = new WebSocket(WSS_MARKETS);
+  state.wsMarkets = ws;
+
+  ws.addEventListener('open', () => {
+    setDot('dot-markets', 'live');
+
+    // Subscribe to price updates for each crypto event
+    for (const eventId of state.bayseEventIds) {
+      ws.send(JSON.stringify({ type: 'subscribe', channel: 'prices', eventId }));
+      ws.send(JSON.stringify({ type: 'subscribe', channel: 'activity', eventId }));
+    }
+
+    // Also subscribe to a general activity feed if no specific events
+    if (state.bayseEventIds.length === 0) {
+      // fallback — subscribe broadly
+    }
+  });
+
+  ws.addEventListener('message', e => {
+    for (const line of e.data.split('\n')) {
+      if (!line.trim()) continue;
+      try {
+        const msg = JSON.parse(line);
+        if (msg.type === 'price_update') handlePriceUpdate(msg.data);
+        if (msg.type === 'buy_order' || msg.type === 'sell_order') handleActivity(msg);
+      } catch {}
+    }
+  });
+
+  ws.addEventListener('close', () => {
+    setDot('dot-markets', 'error');
+    setTimeout(connectMarketsWS, 3000);
+  });
+
+  ws.addEventListener('error', () => setDot('dot-markets', 'error'));
+}
+
+function handlePriceUpdate(ev) {
+  // Update our market data
+  const idx = state.bayseMarkets.findIndex(m => m.id === ev.id);
+  if (idx > -1) {
+    state.bayseMarkets[idx] = { ...state.bayseMarkets[idx], ...ev };
+  } else {
+    state.bayseMarkets.push(ev);
+  }
+  renderMarkets();
+}
+
+function handleActivity(msg) {
+  const order = msg.data?.order;
+  const event = msg.data?.event;
+  if (!order || !event) return;
+
+  const item = {
+    type: msg.type === 'buy_order' ? 'buy' : 'sell',
+    title: event.title || event.slug || 'Unknown market',
+    outcome: order.outcome || '',
+    amount: order.amount || 0,
+    price: order.price || 0,
+    currency: order.currency || 'USD',
+    time: new Date()
+  };
+
+  state.activities.unshift(item);
+  if (state.activities.length > MAX_ACTIVITY) state.activities.pop();
+  renderActivity();
+}
+
+// ── RENDER MARKETS ──
+function renderMarkets() {
+  const el = document.getElementById('marketList');
+  const markets = state.bayseMarkets;
+
+  document.getElementById('market-count').textContent =
+    markets.length ? `${markets.length} ACTIVE` : 'NO MARKETS';
+
+  if (!markets.length) {
+    el.innerHTML = '<div class="empty-state">No crypto markets found.<br>They may be filtered or closed.</div>';
+    return;
+  }
+
+  el.innerHTML = markets.slice(0, 8).map(ev => {
+    const mkts = ev.markets || [];
+    const first = mkts[0] || {};
+    const prices = first.prices || {};
+    const yes = prices.YES ?? prices.yes ?? null;
+    const no = prices.NO ?? prices.no ?? null;
+    const yesPct = yes !== null ? Math.round(yes * 100) : null;
+    const probClass = yesPct !== null ? (yesPct >= 65 ? 'high' : yesPct >= 35 ? 'mid' : 'low') : 'mid';
+
+    return `
+    <div class="market-row">
+      <div class="market-title">
+        ${escHtml(ev.title || ev.slug || 'Unknown')}
+        <div class="market-sub">${first.engine || 'CLOB'} · ${ev.status || 'open'}</div>
+      </div>
+      <div class="prob-bar-wrap">
+        <div class="prob-label"><span>YES</span><span>NO</span></div>
+        <div class="prob-bar">
+          <div class="prob-fill" style="width:${yesPct ?? 50}%"></div>
+        </div>
+      </div>
+      <div class="prob-yes ${probClass}">${yesPct !== null ? yesPct + '%' : '—'}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── DIVERGENCE ENGINE ──
+function checkDivergence(symbol, price, prevPrice, sessionPct) {
+  if (!prevPrice) return;
+  const tickPct = ((price - prevPrice) / prevPrice);
+  if (Math.abs(tickPct) < 0.003) return; // ignore tiny ticks
+
+  // Find related Bayse markets
+  const related = state.bayseMarkets.filter(ev => {
+    const t = (ev.title || ev.slug || '').toLowerCase();
+    if (symbol === 'BTCUSDT') return t.includes('btc') || t.includes('bitcoin');
+    if (symbol === 'ETHUSDT') return t.includes('eth') || t.includes('ethereum');
+    if (symbol === 'SOLUSDT') return t.includes('sol') || t.includes('solana');
+    return false;
+  });
+
+  for (const ev of related) {
+    const mkts = ev.markets || [];
+    const first = mkts[0] || {};
+    const prices = first.prices || {};
+    const yes = prices.YES ?? prices.yes ?? null;
+    if (yes === null) continue;
+
+    // If spot moved but Bayse prob didn't move proportionally, flag it
+    const spotDir = tickPct > 0 ? 'UP' : 'DOWN';
+    const probMoved = yes > 0.5 === tickPct > 0;
+
+    if (Math.abs(tickPct) >= DIV_THRESHOLD || !probMoved) {
+      const alert = {
+        symbol: symbol.replace('USDT', ''),
+        spotMove: (tickPct * 100).toFixed(2),
+        spotDir,
+        prob: Math.round(yes * 100),
+        market: ev.title || ev.slug,
+        time: new Date(),
+        strong: Math.abs(tickPct) >= DIV_THRESHOLD
+      };
+
+      // Deduplicate — don't flood same market
+      const already = state.alerts.find(a => a.market === alert.market &&
+        (new Date() - a.time) < 15000);
+      if (!already) {
+        state.alerts.unshift(alert);
+        if (state.alerts.length > MAX_ALERTS) state.alerts.pop();
+        renderAlerts();
+      }
+    }
+  }
+}
+
+function renderAlerts() {
+  const el = document.getElementById('alertList');
+  document.getElementById('alert-count').textContent = state.alerts.length;
+
+  if (!state.alerts.length) {
+    el.innerHTML = '<div class="no-alerts">Watching for<br>entry signals...<br><br>⬡</div>';
+    return;
+  }
+
+  el.innerHTML = state.alerts.map(a => `
+    <div class="alert-item ${a.strong ? 'strong' : ''}">
+      <div class="alert-header">
+        <span class="alert-symbol">${a.symbol} ${a.spotDir === 'UP' ? '▲' : '▼'} ${a.spotMove}%</span>
+        <span class="alert-time">${formatTime(a.time)}</span>
+      </div>
+      <div class="alert-body">
+        <strong>${escHtml(a.market)}</strong><br>
+        Bayse YES: ${a.prob}% · Spot moved ${a.spotDir.toLowerCase()} — check for lag entry
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── ACTIVITY ──
+function renderActivity() {
+  const el = document.getElementById('activityList');
+  if (!state.activities.length) {
+    el.innerHTML = '<div class="empty-state">Waiting for trades...</div>';
+    return;
+  }
+  el.innerHTML = state.activities.map(a => `
+    <div class="activity-row">
+      <div class="activity-type ${a.type}">${a.type.toUpperCase()}</div>
+      <div class="activity-info">
+        <div class="activity-title">${escHtml(a.title)}</div>
+        <div class="activity-meta">${a.outcome} · @${(a.price * 100).toFixed(0)}¢ · ${formatTime(a.time)}</div>
+      </div>
+      <div class="activity-amount">${a.currency === 'NGN' ? '₦' : '$'}${a.amount.toFixed(2)}</div>
+    </div>
+  `).join('');
+}
+
+// ── PORTFOLIO ──
+async function fetchPortfolio() {
+  try {
+    const res = await fetch(`${BASE}/v1/pm/portfolio`, {
+      headers: { 'X-Public-Key': state.publicKey }
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    renderPortfolio(data);
+    setDot('dot-portfolio', 'live');
+  } catch {
+    setDot('dot-portfolio', 'error');
+  }
+}
+
+function renderPortfolio(data) {
+  const el = document.getElementById('portfolioContent');
+  const positions = data.positions || data.data || data || [];
+  const arr = Array.isArray(positions) ? positions : [];
+
+  if (!arr.length) {
+    el.innerHTML = `
+      <div class="portfolio-stat">
+        <div class="portfolio-stat-label">Total Value</div>
+        <div class="portfolio-stat-value">$${(data.totalValue || data.total || 0).toFixed(2)}</div>
+      </div>
+      <div class="empty-state" style="padding:16px 0">No open positions</div>`;
+    return;
+  }
+
+  const total = arr.reduce((s, p) => s + (p.currentValue || p.value || 0), 0);
+  const cost = arr.reduce((s, p) => s + (p.cost || p.amount || 0), 0);
+  const pnl = total - cost;
+
+  el.innerHTML = `
+    <div class="portfolio-stat">
+      <div class="portfolio-stat-label">Open Value</div>
+      <div class="portfolio-stat-value">$${total.toFixed(2)}</div>
+    </div>
+    <div class="portfolio-stat">
+      <div class="portfolio-stat-label">Unrealised P&L</div>
+      <div class="portfolio-stat-value ${pnl >= 0 ? 'green' : 'red'}">${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}</div>
+    </div>
+    <div style="margin-top:12px">
+      ${arr.slice(0, 5).map(p => `
+        <div class="position-row">
+          <div>
+            <div style="font-size:11px;font-weight:600;margin-bottom:2px">${escHtml(p.eventTitle || p.title || 'Market')}</div>
+            <span class="position-outcome ${(p.outcome || '').toLowerCase()}">${p.outcome || ''}</span>
+          </div>
+          <div class="position-pnl ${(p.pnl || 0) >= 0 ? 'pos' : 'neg'}">
+            ${(p.pnl || 0) >= 0 ? '+' : ''}$${(p.pnl || 0).toFixed(2)}
+          </div>
+        </div>`).join('')}
+    </div>`;
+}
+
+// ── UTILS ──
+function setDot(id, state) {
+  const el = document.getElementById(id);
+  if (el) el.className = 'badge-dot ' + state;
+}
+
+function formatTime(d) {
+  return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── ENTER KEY ──
+document.getElementById('pubKeyInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') launch();
+});
+</script>
+</body>
+</html>
