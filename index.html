@@ -693,7 +693,7 @@ const PROXY = (path) => `/api/proxy?path=${encodeURIComponent(path)}`;
 const WSS_SPOT = 'wss://socket.bayse.markets/ws/v1/realtime';
 const WSS_MARKETS = 'wss://socket.bayse.markets/ws/v1/markets';
 const SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT'];
-const CRYPTO_KEYWORDS = ['btc', 'eth', 'sol', 'bitcoin', 'ethereum', 'solana', 'crypto', 'usd', 'price', '$'];
+const CRYPTO_KEYWORDS = ['btc', 'eth', 'sol', 'bitcoin', 'ethereum', 'solana', 'crypto', 'usdt', 'usd/'];
 const MAX_HISTORY = 40;
 const MAX_ALERTS = 8;
 const MAX_ACTIVITY = 12;
@@ -1086,6 +1086,7 @@ async function fetchPortfolio() {
     });
     if (!res.ok) return;
     const data = await res.json();
+    console.log('PORTFOLIO RAW:', JSON.stringify(data));
     renderPortfolio(data);
     setDot('dot-portfolio', 'live');
   } catch {
